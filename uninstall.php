@@ -3,9 +3,9 @@
 if (!defined('WP_UNINSTALL_PLUGIN')) exit;
 
 // Удаление хука
-$timestamp = wp_next_scheduled('vds_backup_cron_job_hook');
-wp_unschedule_event($timestamp, 'vds_backup_cron_job_hook');
+$timestamp = wp_next_scheduled('bl_cron_backup_hook');
+wp_unschedule_event($timestamp, 'bl_cron_backup_hook');
 
-remove_action('vds_backup_cron_job_hook', 'backup_cron_job');
+remove_action('bl_cron_backup_hook', 'backup_cron_job');
 
 ?>

@@ -13,14 +13,23 @@
  * Network:     true
  */
 
-// Токены можно сгенерировать здесь: https://vds.selectel.ru/panel/settings/tokens/
+/**
+ * Токены можно сгенерировать здесь: https://vds.selectel.ru/panel/settings/tokens/
+ * @const
+ */
 const TOKEN = 'YOUR_TOKEN_HERE';
-
-// Название сервера можно получить здесь: https://vds.selectel.ru/panel/scalets/
+/**
+ * Название сервера можно получить здесь: https://vds.selectel.ru/panel/scalets/
+ * @const
+ */
 const SCALET = 'YOUR_SCALET_HERE';
 
-// Создание резервной копии
-function createBackup($name) {
+/**
+ * Создание резервной копии
+ * @param string $name
+ * @return mixed
+ */
+function create_backup(string $name) {
     $url = "https://api.vscale.io/v1/scalets/".SCALET."/backup";
 
     $curl = curl_init($url);
@@ -39,8 +48,11 @@ function createBackup($name) {
     curl_close($curl);
     return json_decode($resp);
 }
-// Просмотр списка резервных копий
-function findBackup() {
+/**
+ * Просмотр списка резервных копий
+ * @return mixed
+ */
+function find_backup() {
     $url = 'https://api.vscale.io/v1/backups';
 
     $curl = curl_init($url);
@@ -48,8 +60,8 @@ function findBackup() {
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
     $headers = [
-       "X-Token: ".TOKEN,
-       "Content-Type: application/json;charset=UTF-8",
+        "X-Token: ".TOKEN,
+        "Content-Type: application/json;charset=UTF-8",
     ];
     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 
@@ -57,18 +69,22 @@ function findBackup() {
     curl_close($curl);
     return json_decode($resp);
 }
-// Удаление резервной копии
-function removeBackup($id) {
+/**
+ * Удаление резервной копии
+ * @param string $id
+ * @return mixed
+ */
+function remove_backup(string $id) {
     $url = 'https://api.vscale.io/v1/backups/'.$id;
 
     $curl = curl_init($url);
     curl_setopt($curl, CURLOPT_URL, $url);
-    curl_setopt($curl, CURLOPT_DELETE, true);
+    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "DELETE");
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
     $headers = [
-       "X-Token: ".TOKEN,
-       "Content-Type: application/json;charset=UTF-8",
+        "X-Token: ".TOKEN,
+        "Content-Type: application/json;charset=UTF-8",
     ];
     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
 
@@ -76,31 +92,26 @@ function removeBackup($id) {
     curl_close($curl);
     return json_decode($resp);
 }
-// CRON JOB
-function backup_cron_job() {
-    $backupList = findBackup();
+/**
+ * CRON JOB
+ * @return void
+ */
+function wpb_backup_cron_func() {
+    $backupList = find_backup();
 
     // Если копия есть - то удаляем ее
     if (!empty($backupList)) {
-        $backupFirstID = $backupList[0]->id;
-        removeBackup($backupFirstID);
+        remove_backup(strval($backupList[0]->id));
     }
     // Создаем имя вида Baskovsky-Blog_backup_20230124
     $name = 'Baskovsky-Blog_backup_'.date("Ymd");
-    try {
-        createBackup($name);
-        echo 'backup succesful';
-    } catch (error) {
-        echo 'backup failed';
-    }
+    create_backup($name);
 }
 
-// Запускаем событие каждый день
-if (!wp_next_scheduled('vds_backup_cron_job_hook')) {
-    wp_schedule_event(time(), 'daily', 'vds_backup_cron_job_hook');
+// Запускаем хук при активации. Повторяем каждый день
+if (!wp_next_scheduled('bl_cron_backup_hook')) {
+    wp_schedule_event(time(), 'daily', 'bl_cron_backup_hook');
 }
-
-// Название хука
-add_action('vds_backup_cron_job_hook', 'backup_cron_job');
+add_action('bl_cron_backup_hook', 'wpb_backup_cron_func', 10);
 
 ?>
